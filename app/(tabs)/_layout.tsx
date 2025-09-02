@@ -7,8 +7,8 @@ import { TransactionsProvider } from '../transactionsContext';
 
 export default function Layout() {
   return (
-    <TransactionsProvider>
-      <ThemeProvider>
+    <ThemeProvider>
+      <TransactionsProvider>
         <Tabs
           screenOptions={{
             headerShown: false,
@@ -49,9 +49,9 @@ export default function Layout() {
               tabBarIcon: () => <Text>⚙️</Text>,
             }}
           />
-
         </Tabs>
-      </ThemeProvider>
-    </TransactionsProvider>
+      </TransactionsProvider>
+    </ThemeProvider>
   );
 }
+

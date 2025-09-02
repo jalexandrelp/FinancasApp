@@ -1,7 +1,6 @@
-// app/(tabs)/settings.tsx
 import React, { useContext } from 'react';
 import { SafeAreaView, View, Text, StyleSheet, Switch } from 'react-native';
-import { ThemeContext } from '../themeContext'; // vamos criar esse contexto
+import { ThemeContext } from '../themeContext';
 
 export default function Settings() {
   const { darkMode, toggleDarkMode } = useContext(ThemeContext);
@@ -24,9 +23,16 @@ export default function Settings() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex:1, padding:16 },
-  title: { fontSize:22, fontWeight:'700', marginBottom:16, textAlign:'center' },
-  option: { flexDirection:'row', justifyContent:'space-between', alignItems:'center', paddingVertical:12, borderBottomWidth:1, borderBottomColor:'#ccc' },
-  label: { fontSize:16 },
-  info: { fontSize:14 }
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 22, fontWeight: '700', marginBottom: 16, textAlign: 'center' },
+  option: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  label: { fontSize: 16 },
+  info: { fontSize: 14 },
 });
