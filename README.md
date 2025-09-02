@@ -1,50 +1,103 @@
-# Welcome to your Expo app 👋
+# FinancasApp 💰
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Um aplicativo de finanças pessoais para Android, desenvolvido com **React Native** e **Expo**, que permite controlar suas receitas e despesas de forma prática e visual.
 
-## Get started
+---
 
-1. Install dependencies
+## Funcionalidades
 
-   ```bash
-   npm install
-   ```
+* Registrar entradas e saídas financeiras
+* Visualizar resumo de saldo, entradas e saídas
+* Modal animado para adicionar lançamentos
+* Dashboard com destaque para últimos lançamentos
+* Relatórios com gráficos por categoria
+* Modo claro e escuro
+* Estrutura de navegação por abas:
 
-2. Start the app
+  * Início (Dashboard)
+  * Transações
+  * Relatórios
+  * Configurações
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## Tecnologias utilizadas
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+* [React Native](https://reactnative.dev/)
+* [Expo](https://expo.dev/)
+* [React Navigation / Expo Router](https://reactnavigation.org/)
+* [React Native Chart Kit](https://github.com/indiespirit/react-native-chart-kit)
+* TypeScript
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+## Como rodar o projeto
 
-When you're ready, run:
+1. Clone o repositório:
 
 ```bash
-npm run reset-project
+git clone https://github.com/jalexandrelp/FinancasApp.git
+cd FinancasApp
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Instale as dependências:
 
-## Learn more
+```bash
+npm install
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+ou
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+yarn install
+```
 
-## Join the community
+3. Rode o aplicativo:
 
-Join our community of developers creating universal apps.
+```bash
+npx expo start
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
+## Estrutura do projeto
+
+```
+FinancasApp/
+├─ assets/                 # Imagens, fontes e outros recursos
+├─ app/
+│  ├─ (tabs)/              # Páginas com navegação por abas
+│  │  ├─ dashboard.tsx
+│  │  ├─ transactions.tsx
+│  │  ├─ reports.tsx
+│  │  └─ settings.tsx
+│  ├─ _layout.tsx          # Layout principal com Provider e navegação
+│  └─ transactionsContext.tsx
+├─ themeContext.tsx        # Controle de tema claro/escuro
+├─ package.json
+└─ README.md
+```
+
+---
+
+## Observações
+
+* Todos os lançamentos são armazenados em memória usando o Context API (mais tarde pode ser integrado a Google Sheets ou outro banco).
+* Modo claro/escuro configurável.
+* Layout responsivo e compatível com Android.
+* As cores, animações e estilos estão pensados para uma experiência visual agradável e intuitiva.
+
+---
+
+## Próximos passos
+
+* Integração com Google Sheets para persistência de dados.
+* Validações adicionais nos formulários de lançamento.
+* Melhorias nos gráficos, animações e relatórios.
+* Implementação de filtros e histórico completo de transações.
+* Adicionar notificações e lembretes
+* Otimizar UI/UX para diferentes tamanhos de tela
+
+
+
+
