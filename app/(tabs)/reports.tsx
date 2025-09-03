@@ -1,3 +1,5 @@
+// path: app/(tabs)/reports.tsx (versão aprimorada)
+
 import React, { useContext, useMemo } from 'react';
 import { Dimensions, Platform, SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
@@ -14,16 +16,20 @@ export default function Reports() {
   const textColor       = darkMode ? '#f0f4f8' : '#264653';
   const legendColor     = darkMode ? '#ccc' : '#333';
 
-  const toNumber = (str: string) => parseFloat(str.replace('R$ ','').replace('.','').replace(',','.')) || 0;
+  const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
   const { totalEntradas, totalSaidas, categoryData } = useMemo(() => {
-    const totalEntradas = transactions.filter(t=>t.type==='Entrada').reduce((s,t)=>s+toNumber(t.value),0);
-    const totalSaidas   = transactions.filter(t=>t.type==='Saída').reduce((s,t)=>s+toNumber(t.value),0);
+    const totalEntradas = transactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
+    const totalSaidas = transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
 
     const catMap: Record<string, number> = {};
     transactions.forEach(t => {
       if (!t.category) return;
-      catMap[t.category] = (catMap[t.category] || 0) + toNumber(t.value);
+      catMap[t.category] = (catMap[t.category] || 0) + t.amount;
     });
 
     const categoryData = Object.keys(catMap).map((name, i) => ({
@@ -44,10 +50,10 @@ export default function Reports() {
 
       <View style={styles.summary}>
         <Text style={[styles.summaryText, { color: greenTone }]}>
-          Total Entradas: R$ {totalEntradas.toFixed(2).replace('.', ',')}
+          Total Entradas: {formatCurrency(totalEntradas)}
         </Text>
         <Text style={[styles.summaryText, { color: redTone }]}>
-          Total Saídas: R$ {totalSaidas.toFixed(2).replace('.', ',')}
+          Total Saídas: {formatCurrency(totalSaidas)}
         </Text>
       </View>
 

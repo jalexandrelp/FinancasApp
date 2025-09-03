@@ -1,12 +1,13 @@
-// transactionsContext da base dashboard5
+// path: app/transactionsContext.tsx (versão aprimorada)
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, ReactNode, useEffect, useState } from 'react';
 
 export type Transaction = {
   id: string;
   desc: string;
-  type: 'Entrada' | 'Saída';
-  value: string;
+  type: 'income' | 'expense'; // padronizado
+  amount: number;             // agora é number
   category: string;
   account: string;
   date: string;
@@ -37,7 +38,15 @@ export const TransactionsProvider = ({ children }: Props) => {
     const loadTransactions = async () => {
       try {
         const data = await AsyncStorage.getItem('@transactions');
-        if (data) setTransactions(JSON.parse(data));
+        if (data) {
+          const parsed: Transaction[] = JSON.parse(data).map((t: any) => ({
+            ...t,
+            // Conversão para os novos tipos, se vier da base antiga
+            type: t.type === 'Entrada' ? 'income' : t.type === 'Saída' ? 'expense' : t.type,
+            amount: typeof t.value === 'string' ? parseFloat(t.value.replace(',', '.')) || 0 : t.amount || 0,
+          }));
+          setTransactions(parsed);
+        }
       } catch (err) {
         console.error('Erro ao carregar transações', err);
       }
@@ -60,14 +69,16 @@ export const TransactionsProvider = ({ children }: Props) => {
   const addTransaction = (tx: Transaction) => setTransactions(prev => [tx, ...prev]);
   const editTransaction = (id: string, updatedTx: Transaction) =>
     setTransactions(prev => prev.map(t => (t.id === id ? updatedTx : t)));
-  const removeTransaction = (id: string) => setTransactions(prev => prev.filter(t => t.id !== id));
+  const removeTransaction = (id: string) =>
+    setTransactions(prev => prev.filter(t => t.id !== id));
 
   return (
-    <TransactionsContext.Provider value={{ transactions, addTransaction, editTransaction, removeTransaction }}>
+    <TransactionsContext.Provider
+      value={{ transactions, addTransaction, editTransaction, removeTransaction }}
+    >
       {children}
     </TransactionsContext.Provider>
   );
 };
 
-// Export default para evitar warning do Router
 export default TransactionsProvider;

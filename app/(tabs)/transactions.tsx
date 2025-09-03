@@ -1,3 +1,5 @@
+// path: app/(tabs)/transactions.tsx (versão aprimorada)
+
 import React, { useContext } from 'react';
 import { FlatList, Platform, SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { ThemeContext } from '../themeContext';
@@ -14,6 +16,9 @@ export default function Transactions() {
     backgroundColor: darkMode ? '#264653' : '#f0f4f8',
   };
 
+  const formatCurrency = (value: number) =>
+    `R$ ${value.toFixed(2).replace('.', ',')}`;
+
   return (
     <SafeAreaView style={containerStyle}>
       <Text style={{ fontSize: 22, fontWeight: '700', textAlign:'center', marginBottom: 12, color: darkMode ? '#f0f4f8' : '#264653' }}>
@@ -23,16 +28,24 @@ export default function Transactions() {
       <FlatList
         data={transactions}
         keyExtractor={item => item.id}
-        ListEmptyComponent={<Text style={{ textAlign:'center', marginTop:16, color: darkMode ? '#f0f4f8' : '#666' }}>Nenhum lançamento ainda.</Text>}
+        ListEmptyComponent={
+          <Text style={{ textAlign:'center', marginTop:16, color: darkMode ? '#f0f4f8' : '#666' }}>
+            Nenhum lançamento ainda.
+          </Text>
+        }
         renderItem={({ item }) => (
           <View style={[styles.item, { backgroundColor: darkMode ? '#333' : '#fff' }]}>
             <View>
               <Text style={[styles.desc, { color: darkMode ? '#f0f4f8' : '#000' }]}>{item.desc}</Text>
               <Text style={[styles.sub, { color: darkMode ? '#ccc' : '#666' }]}>
-                {item.type}{item.category ? ` · ${item.category}` : ''}{item.date ? ` · ${item.date}` : ''}
+                {item.type === 'income' ? 'Entrada' : 'Saída'}
+                {item.category ? ` · ${item.category}` : ''}
+                {item.date ? ` · ${item.date}` : ''}
               </Text>
             </View>
-            <Text style={[styles.value, { color: item.type==='Entrada' ? '#2a9d8f' : '#e76f51' }]}>{item.value}</Text>
+            <Text style={[styles.value, { color: item.type === 'income' ? '#2a9d8f' : '#e76f51' }]}>
+              {formatCurrency(item.amount)}
+            </Text>
           </View>
         )}
       />

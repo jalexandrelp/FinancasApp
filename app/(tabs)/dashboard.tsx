@@ -1,4 +1,5 @@
-// app/(tabs)/dashboard.tsx
+// path: app/(tabs)/dashboard.tsx (versão aprimorada)
+
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -16,7 +17,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { PieChart } from 'react-native-chart-kit';
 import { ThemeContext } from '../themeContext';
 import { Transaction, TransactionsContext } from '../transactionsContext';
 
@@ -49,8 +49,8 @@ const TransactionItem = ({ item, highlight }: { item: Transaction; highlight: bo
       ]}
     >
       <Text style={{ color: darkMode ? '#f0f4f8' : '#000' }}>{item.desc}</Text>
-      <Text style={{ color: item.type === 'Entrada' ? 'green' : 'red' }}>
-        {item.type === 'Entrada' ? '+' : '-'} R$ {item.value}
+      <Text style={{ color: item.type === 'income' ? 'green' : 'red' }}>
+        {item.type === 'income' ? '+' : '-'} R$ {item.amount.toFixed(2)}
       </Text>
     </Animated.View>
   );
@@ -112,18 +112,18 @@ const AddEditTransactionModal = ({
   transaction?: Transaction | null;
 }) => {
   const [desc, setDesc] = useState(transaction?.desc || '');
-  const [value, setValue] = useState(transaction?.value || '');
-  const [type, setType] = useState<Transaction['type']>(transaction?.type || 'Entrada');
+  const [amount, setAmount] = useState(transaction?.amount.toString() || '');
+  const [type, setType] = useState<Transaction['type']>(transaction?.type || 'income');
   const [account, setAccount] = useState(transaction?.account || '');
 
   const { darkMode } = useContext(ThemeContext);
 
   const handleSave = () => {
-    if (!desc || !value || !account) return;
+    if (!desc || !amount || !account) return;
     onSave({
       id: transaction?.id || Math.random().toString(),
       desc,
-      value,
+      amount: Number(amount),
       type,
       category: transaction?.category || '',
       account,
@@ -131,7 +131,7 @@ const AddEditTransactionModal = ({
       isCreditCard: transaction?.isCreditCard || false,
     });
     setDesc('');
-    setValue('');
+    setAmount('');
     setAccount('');
     onClose();
   };
@@ -157,8 +157,8 @@ const AddEditTransactionModal = ({
             placeholder="Valor"
             placeholderTextColor={darkMode ? '#ccc' : '#999'}
             style={[styles.input, { color: darkMode ? '#f0f4f8' : '#000', borderColor: darkMode ? '#555' : '#ccc' }]}
-            value={value}
-            onChangeText={setValue}
+            value={amount}
+            onChangeText={setAmount}
             keyboardType="numeric"
           />
           <TextInput
@@ -169,11 +169,11 @@ const AddEditTransactionModal = ({
             onChangeText={setAccount}
           />
           <View style={styles.modalButtons}>
-            <TouchableOpacity onPress={() => setType('Entrada')} style={styles.typeButton}>
-              <Text style={{ color: type === 'Entrada' ? 'green' : darkMode ? '#f0f4f8' : '#000' }}>Entrada</Text>
+            <TouchableOpacity onPress={() => setType('income')} style={styles.typeButton}>
+              <Text style={{ color: type === 'income' ? 'green' : darkMode ? '#f0f4f8' : '#000' }}>Entrada</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setType('Saída')} style={styles.typeButton}>
-              <Text style={{ color: type === 'Saída' ? 'red' : darkMode ? '#f0f4f8' : '#000' }}>Saída</Text>
+            <TouchableOpacity onPress={() => setType('expense')} style={styles.typeButton}>
+              <Text style={{ color: type === 'expense' ? 'red' : darkMode ? '#f0f4f8' : '#000' }}>Saída</Text>
             </TouchableOpacity>
           </View>
           <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
@@ -199,7 +199,6 @@ export default function Dashboard() {
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
 
   const flatListRef = useRef<FlatList>(null);
-
   const accounts = Array.from(new Set(transactions.map(t => t.account)));
 
   const filteredTransactions = selectedAccount
@@ -217,18 +216,12 @@ export default function Dashboard() {
 
   // RESUMO FINANCEIRO
   const totalEntrada = filteredTransactions
-    .filter(t => t.type === 'Entrada')
-    .reduce((sum, t) => sum + Number(t.value), 0);
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
   const totalSaida = filteredTransactions
-    .filter(t => t.type === 'Saída')
-    .reduce((sum, t) => sum + Number(t.value), 0);
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
   const saldo = totalEntrada - totalSaida;
-
-  // GRÁFICO
-  const chartData = [
-    { name: 'Entradas', amount: totalEntrada, color: 'green', legendFontColor: darkMode ? '#f0f4f8' : '#000', legendFontSize: 14 },
-    { name: 'Saídas', amount: totalSaida, color: 'red', legendFontColor: darkMode ? '#f0f4f8' : '#000', legendFontSize: 14 },
-  ];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: darkMode ? '#264653' : '#f0f4f8' }]}>
@@ -251,11 +244,7 @@ export default function Dashboard() {
       </View>
 
       {/* CONTAS */}
-      <AccountsScroll
-        accounts={accounts}
-        selectedAccount={selectedAccount}
-        setSelectedAccount={setSelectedAccount}
-      />
+      <AccountsScroll accounts={accounts} selectedAccount={selectedAccount} setSelectedAccount={setSelectedAccount} />
 
       {/* LISTA DE TRANSAÇÕES */}
       <FlatList
@@ -265,34 +254,9 @@ export default function Dashboard() {
         renderItem={({ item }) => (
           <TransactionItem item={item} highlight={item.id === lastAddedId} />
         )}
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 100 }}
       />
 
-      {/* GRÁFICO */}
-      <View style={{ marginVertical: 16 }}>
-        <Text style={{ color: darkMode ? '#f0f4f8' : '#000', fontWeight: '700', fontSize: 16, marginBottom: 8 }}>
-          Gráfico Resumo
-        </Text>
-        <PieChart
-          data={chartData.map(d => ({ name: d.name, population: d.amount, color: d.color, legendFontColor: d.legendFontColor, legendFontSize: d.legendFontSize }))}
-          width={screenWidth - 32}
-          height={180}
-          chartConfig={{
-            backgroundColor: darkMode ? '#264653' : '#f0f4f8',
-            backgroundGradientFrom: darkMode ? '#264653' : '#f0f4f8',
-            backgroundGradientTo: darkMode ? '#264653' : '#f0f4f8',
-            color: (opacity = 1) => darkMode ? `rgba(255,255,255,${opacity})` : `rgba(0,0,0,${opacity})`,
-            labelColor: (opacity = 1) => darkMode ? `rgba(255,255,255,${opacity})` : `rgba(0,0,0,${opacity})`,
-          }}
-          accessor="population"
-          backgroundColor="transparent"
-          paddingLeft="15"
-          absolute
-        />
-      </View>
-
-      {/* MODAL ADICIONAR / EDITAR */}
+      {/* MODAL */}
       <AddEditTransactionModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
@@ -300,15 +264,12 @@ export default function Dashboard() {
         transaction={selectedTransaction}
       />
 
-      {/* BOTÃO + */}
+      {/* BOTÃO NOVA TRANSAÇÃO */}
       <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => {
-          setSelectedTransaction(null);
-          setModalVisible(true);
-        }}
+        onPress={() => { setSelectedTransaction(null); setModalVisible(true); }}
+        style={styles.floatingButton}
       >
-        <Text style={{ color: '#fff', fontSize: 24 }}>+</Text>
+        <Text style={{ fontSize: 24, color: '#fff' }}>+</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -316,20 +277,20 @@ export default function Dashboard() {
 
 // ===================== ESTILOS =====================
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 16 : 16 },
-  summaryContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
-  summaryBox: { flex: 1, marginHorizontal: 4, padding: 12, borderRadius: 8, alignItems: 'center' },
-  summaryText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  summaryValue: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  accountCard: { padding: 12, borderRadius: 6, marginHorizontal: 4 },
-  transactionItem: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, borderRadius: 6, marginBottom: 8 },
-  modalContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalContent: { width: '90%', padding: 16, borderRadius: 8 },
-  modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
-  input: { borderWidth: 1, borderRadius: 6, padding: 8, marginBottom: 12 },
-  modalButtons: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 12 },
-  typeButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, borderWidth: 1 },
-  saveButton: { backgroundColor: '#2a9d8f', padding: 12, borderRadius: 6, alignItems: 'center', marginBottom: 8 },
-  closeButton: { alignItems: 'center', padding: 8 },
-  addButton: { position: 'absolute', bottom: 32, right: 32, backgroundColor: '#2a9d8f', width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center' },
+  container:{ flex:1, padding:16, paddingTop: Platform.OS==='android' ? (StatusBar.currentHeight||0)+16 : 16 },
+  summaryContainer:{ flexDirection:'row', justifyContent:'space-between', marginBottom:16 },
+  summaryBox:{ flex:1, padding:12, borderRadius:6, marginHorizontal:4, alignItems:'center', justifyContent:'center' },
+  summaryText:{ fontWeight:'700', fontSize:14, color:'#fff' },
+  summaryValue:{ fontWeight:'700', fontSize:16, color:'#fff', marginTop:4 },
+  transactionItem:{ flexDirection:'row', justifyContent:'space-between', padding:12, borderRadius:6, marginBottom:8 },
+  accountCard:{ padding:10, borderRadius:6, marginRight:8 },
+  modalContainer:{ flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'rgba(0,0,0,0.5)' },
+  modalContent:{ width:'90%', padding:16, borderRadius:8 },
+  modalTitle:{ fontWeight:'700', fontSize:18, marginBottom:12, textAlign:'center' },
+  input:{ borderWidth:1, borderRadius:6, padding:8, marginBottom:12 },
+  modalButtons:{ flexDirection:'row', justifyContent:'space-around', marginBottom:12 },
+  typeButton:{ padding:8, borderRadius:6, borderWidth:1, borderColor:'#ccc' },
+  saveButton:{ backgroundColor:'#2a9d8f', padding:12, borderRadius:6, alignItems:'center', marginBottom:8 },
+  closeButton:{ padding:12, borderRadius:6, alignItems:'center' },
+  floatingButton:{ position:'absolute', right:16, bottom:16, width:56, height:56, borderRadius:28, backgroundColor:'#2a9d8f', justifyContent:'center', alignItems:'center' },
 });
