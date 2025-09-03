@@ -2,8 +2,8 @@
 
 import React, { useContext } from 'react';
 import { FlatList, Platform, SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { TransactionsContext }../contexts/themeContextxts/transactionsContext';
 import { ThemeContext } from '../themeContext';
-import { TransactionsContext } from '../transactionsContext';
 
 export default function Transactions() {
   const { darkMode } = useContext(ThemeContext);

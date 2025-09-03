@@ -1,8 +1,8 @@
-import React from 'react';
-import { TransactionsProvider } from './transactionsContext';
-import { ThemeProvider } from './themeContext';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import React from 'react';./contexts/themeContext
+import { TransactionsProvider } from './contexts/transactionsContext';
+import { ThemeProvider } from './themeContext';
 
 export default function RootLayout() {
   return (
