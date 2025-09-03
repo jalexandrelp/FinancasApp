@@ -79,14 +79,14 @@ FinancasApp/
 ```
 ## Ordem Importante dos Arquivos:
 
-app/_layout.tsx 
-app/themeContext.tsx 
-app/transactionsContext.tsx 
-app/(tabs)/_layout.tsx
-app/(tabs)/dashboard.tsx (versão dashboard5) 
-app/(tabs)/transactions.tsx 
-app/(tabs)/reports.tsx 
-app/(tabs)/settings.tsx
+* app/_layout.tsx 
+* app/themeContext.tsx 
+* app/transactionsContext.tsx 
+* app/(tabs)/_layout.tsx
+* app/(tabs)/dashboard.tsx (versão dashboard5) 
+* app/(tabs)/transactions.tsx 
+* app/(tabs)/reports.tsx 
+* app/(tabs)/settings.tsx
 
 ---
 
