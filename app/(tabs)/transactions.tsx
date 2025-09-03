@@ -1,12 +1,11 @@
-// app/(tabs)/transactions.tsx
 import React, { useContext } from 'react';
-import { SafeAreaView, View, Text, FlatList, StyleSheet, Platform, StatusBar } from 'react-native';
-import { TransactionsContext } from '../transactionsContext';
+import { FlatList, Platform, SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { ThemeContext } from '../themeContext';
+import { TransactionsContext } from '../transactionsContext';
 
 export default function Transactions() {
-  const { transactions } = useContext(TransactionsContext);
   const { darkMode } = useContext(ThemeContext);
+  const { transactions } = useContext(TransactionsContext);
 
   const containerStyle = {
     flex: 1,

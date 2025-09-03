@@ -1,13 +1,12 @@
-// app/(tabs)/reports.tsx
 import React, { useContext, useMemo } from 'react';
-import { SafeAreaView, View, Text, StyleSheet, Dimensions, Platform, StatusBar } from 'react-native';
+import { Dimensions, Platform, SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
-import { TransactionsContext } from '../transactionsContext';
 import { ThemeContext } from '../themeContext';
+import { TransactionsContext } from '../transactionsContext';
 
 export default function Reports() {
-  const { transactions } = useContext(TransactionsContext);
   const { darkMode } = useContext(ThemeContext);
+  const { transactions } = useContext(TransactionsContext);
 
   const greenTone = '#2a9d8f';
   const redTone   = '#e76f51';

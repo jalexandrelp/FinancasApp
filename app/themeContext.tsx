@@ -1,14 +1,32 @@
 import React, { createContext, ReactNode, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+type Theme = {
+  background: string;
+  text: string;
+  cardBackground: string;
+  placeholder: string;
+  border: string;
+  statusBar: 'light-content' | 'dark-content';
+};
+
 type ThemeContextType = {
   darkMode: boolean;
   toggleDarkMode: () => void;
+  theme: Theme;
 };
 
 export const ThemeContext = createContext<ThemeContextType>({
   darkMode: false,
   toggleDarkMode: () => {},
+  theme: {
+    background: '#f0f4f8',
+    text: '#264653',
+    cardBackground: '#fff',
+    placeholder: '#999',
+    border: '#ccc',
+    statusBar: 'dark-content',
+  },
 });
 
 type Props = { children: ReactNode };
@@ -19,8 +37,8 @@ export const ThemeProvider = ({ children }: Props) => {
   useEffect(() => {
     const loadTheme = async () => {
       try {
-        const theme = await AsyncStorage.getItem('@darkMode');
-        if (theme) setDarkMode(theme === 'true');
+        const themeStored = await AsyncStorage.getItem('@darkMode');
+        if (themeStored) setDarkMode(themeStored === 'true');
       } catch (err) {
         console.error('Erro ao carregar tema', err);
       }
@@ -28,20 +46,36 @@ export const ThemeProvider = ({ children }: Props) => {
     loadTheme();
   }, []);
 
-  const toggleDarkMode = async () => {
-    try {
-      setDarkMode(prev => {
-        AsyncStorage.setItem('@darkMode', (!prev).toString()).catch(err =>
-          console.error('Erro ao salvar tema', err)
-        );
-        return !prev;
-      });
-    } catch (err) {
-      console.error('Erro ao alternar tema', err);
-    }
+  const toggleDarkMode = () => {
+    setDarkMode(prev => {
+      AsyncStorage.setItem('@darkMode', (!prev).toString()).catch(console.error);
+      return !prev;
+    });
   };
 
-  return <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>{children}</ThemeContext.Provider>;
+  const theme: Theme = darkMode
+    ? {
+        background: '#264653',
+        text: '#f0f4f8',
+        cardBackground: '#333',
+        placeholder: '#ccc',
+        border: '#444',
+        statusBar: 'light-content',
+      }
+    : {
+        background: '#f0f4f8',
+        text: '#264653',
+        cardBackground: '#fff',
+        placeholder: '#999',
+        border: '#ccc',
+        statusBar: 'dark-content',
+      };
+
+  return (
+    <ThemeContext.Provider value={{ darkMode, toggleDarkMode, theme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 };
 
 export default ThemeProvider;

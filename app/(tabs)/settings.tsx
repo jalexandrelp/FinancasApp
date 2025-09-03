@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { SafeAreaView, View, Text, StyleSheet, Switch } from 'react-native';
+import { SafeAreaView, StyleSheet, Switch, Text, View } from 'react-native';
 import { ThemeContext } from '../themeContext';
 
 export default function Settings() {
