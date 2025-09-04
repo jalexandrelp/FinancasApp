@@ -1,5 +1,6 @@
 // app/contexts/themeContext.tsx
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 type Theme = {
   background: string;
@@ -32,8 +33,32 @@ export const ThemeContext = createContext<ThemeContextType | undefined>(undefine
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<Theme>(defaultLightTheme);
 
-  const toggleTheme = () => {
-    setTheme(prev => (prev.background === '#f5f5f5' ? defaultDarkTheme : defaultLightTheme));
+  // Carrega o tema salvo no AsyncStorage ao iniciar
+  useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        const savedTheme = await AsyncStorage.getItem('@app_theme');
+        if (savedTheme) {
+          setTheme(savedTheme === 'dark' ? defaultDarkTheme : defaultLightTheme);
+        }
+      } catch (error) {
+        console.log('Erro ao carregar tema:', error);
+      }
+    };
+    loadTheme();
+  }, []);
+
+  // Função para alternar tema e salvar no AsyncStorage
+  const toggleTheme = async () => {
+    try {
+      setTheme((prev) => {
+        const newTheme = prev.background === defaultLightTheme.background ? defaultDarkTheme : defaultLightTheme;
+        AsyncStorage.setItem('@app_theme', newTheme.background === defaultDarkTheme.background ? 'dark' : 'light');
+        return newTheme;
+      });
+    } catch (error) {
+      console.log('Erro ao salvar tema:', error);
+    }
   };
 
   return (
@@ -43,6 +68,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// Hook para usar o tema
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) throw new Error('useTheme must be used within a ThemeProvider');

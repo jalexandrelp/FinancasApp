@@ -1,7 +1,7 @@
-// app/contexts/accountsContext.tsx
-import React, { createContext, useState, ReactNode } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type Account = {
+export type Account = {
   id: string;
   name: string;
   balance: number;
@@ -9,31 +9,50 @@ type Account = {
 
 type AccountsContextType = {
   accounts: Account[];
-  addAccount: (account: Account) => void;
-  updateAccount: (account: Account) => void;
-  deleteAccount: (id: string) => void;
+  addAccount: (a: Account) => void;
+  updateAccount: (a: Account) => void;
+  removeAccount: (id: string) => void;
+  updateBalance: (accountName: string, delta: number) => void; // 🔹 nova função
 };
 
-export const AccountsContext = createContext<AccountsContextType | undefined>(undefined);
+export const AccountsContext = createContext<AccountsContextType | null>(null);
 
-export default function AccountsProvider({ children }: { children: ReactNode }) {
+export const AccountsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [accounts, setAccounts] = useState<Account[]>([]);
 
-  const addAccount = (account: Account) => {
-    setAccounts((prev) => [...prev, account]);
-  };
+  useEffect(() => {
+    const loadAccounts = async () => {
+      const json = await AsyncStorage.getItem('@accounts');
+      if (json) setAccounts(JSON.parse(json));
+    };
+    loadAccounts();
+  }, []);
 
-  const updateAccount = (account: Account) => {
-    setAccounts((prev) => prev.map((a) => (a.id === account.id ? account : a)));
-  };
+  useEffect(() => {
+    AsyncStorage.setItem('@accounts', JSON.stringify(accounts));
+  }, [accounts]);
 
-  const deleteAccount = (id: string) => {
-    setAccounts((prev) => prev.filter((a) => a.id !== id));
+  const addAccount = (a: Account) => setAccounts((prev) => [...prev, a]);
+  const updateAccount = (a: Account) =>
+    setAccounts((prev) => prev.map((acc) => (acc.id === a.id ? a : acc)));
+  const removeAccount = (id: string) =>
+    setAccounts((prev) => prev.filter((acc) => acc.id !== id));
+
+  // 🔹 função que atualiza saldo da conta com base em delta (positivo ou negativo)
+  const updateBalance = (accountName: string, delta: number) => {
+    setAccounts((prev) =>
+      prev.map((acc) =>
+        acc.name === accountName ? { ...acc, balance: acc.balance + delta } : acc
+      )
+    );
   };
 
   return (
-    <AccountsContext.Provider value={{ accounts, addAccount, updateAccount, deleteAccount }}>
+    <AccountsContext.Provider
+      value={{ accounts, addAccount, updateAccount, removeAccount, updateBalance }}
+    >
       {children}
     </AccountsContext.Provider>
   );
-}
+};
+export default AccountsProvider;

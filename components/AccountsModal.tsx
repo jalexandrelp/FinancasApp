@@ -1,7 +1,20 @@
-import React, { useContext, useState } from 'react';
-import { Modal, View, Text, FlatList, TextInput, Pressable, StyleSheet, SafeAreaView, Platform } from 'react-native';
+// components/AccountsModal.tsx
+import React, { useContext, useEffect, useState } from 'react';
+import {
+  Modal,
+  View,
+  Text,
+  FlatList,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  SafeAreaView,
+} from 'react-native';
 import { ThemeContext } from '../app/contexts/themeContext';
-import { AccountsContext } from '../app/contexts/accountsContext';
+import {
+  AccountsContext,
+  type Account,
+} from '../app/contexts/accountsContext';
 import { Ionicons } from '@expo/vector-icons';
 
 interface AccountsModalProps {
@@ -10,37 +23,76 @@ interface AccountsModalProps {
 }
 
 export default function AccountsModal({ visible, onClose }: AccountsModalProps) {
-  const { theme } = useContext(ThemeContext) as any;
-  const { accounts, addAccount, updateAccount, deleteAccount } = useContext(AccountsContext) as any;
+  const themeCtx = useContext(ThemeContext) as any;
+  const ctx = useContext(AccountsContext);
 
-  const [editingAccount, setEditingAccount] = useState<{ id?: string; name: string }>({ name: '' });
+  if (!themeCtx || !ctx) return null;
+
+  const { theme } = themeCtx;
+  const { accounts, addAccount, updateAccount, deleteAccount } = ctx;
+
+  // vamos manter apenas nome aqui e preservar balance do item ao salvar
+  const [editing, setEditing] = useState<Partial<Account>>({ name: '' });
+
+  useEffect(() => {
+    if (!visible) setEditing({ name: '' });
+  }, [visible]);
+
+  const resetForm = () => setEditing({ name: '' });
 
   const handleSave = () => {
-    if (!editingAccount.name.trim()) return;
-    if (editingAccount.id) updateAccount(editingAccount); else addAccount({ name: editingAccount.name });
-    setEditingAccount({ name: '' });
+    const name = (editing.name || '').trim();
+    if (!name) return;
+
+    if (editing.id) {
+      // preserva balance ao atualizar nome
+      const current = accounts.find(a => a.id === editing.id);
+      if (!current) return;
+      updateAccount({
+        ...current,
+        name,
+      });
+    } else {
+      const newAccount: Account = {
+        id: Date.now().toString(),
+        name,
+        balance: 0, // padrão
+      };
+      addAccount(newAccount);
+    }
+    resetForm();
   };
 
-  const handleEdit = (account: any) => setEditingAccount(account);
+  const handleEdit = (item: Account) => setEditing(item);
   const handleDelete = (id: string) => deleteAccount(id);
+
+  const isSaveDisabled = !(editing.name || '').trim();
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={[styles.overlay, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
         <View style={[styles.modal, { backgroundColor: theme.card }]}>
           <Text style={[styles.title, { color: theme.text }]}>Minhas Contas</Text>
+
+          {/* Formulário */}
           <View style={styles.form}>
             <TextInput
               placeholder="Nome da conta"
               placeholderTextColor={theme.text + '88'}
-              value={editingAccount.name}
-              onChangeText={(text) => setEditingAccount({ ...editingAccount, name: text })}
+              value={editing.name || ''}
+              onChangeText={(text) => setEditing((prev) => ({ ...prev, name: text }))}
               style={[styles.input, { color: theme.text, borderColor: theme.primary }]}
             />
-            <Pressable style={[styles.button, { backgroundColor: theme.primary }]} onPress={handleSave}>
-              <Text style={styles.buttonText}>{editingAccount.id ? 'Atualizar' : 'Adicionar'}</Text>
+            <Pressable
+              style={[styles.button, { backgroundColor: isSaveDisabled ? '#ccc' : theme.primary }]}
+              onPress={handleSave}
+              disabled={isSaveDisabled}
+            >
+              <Text style={styles.buttonText}>{editing.id ? 'Atualizar' : 'Adicionar'}</Text>
             </Pressable>
           </View>
+
+          {/* Lista de Contas */}
           <FlatList
             data={accounts}
             keyExtractor={(item) => item.id}
@@ -57,7 +109,15 @@ export default function AccountsModal({ visible, onClose }: AccountsModalProps) 
               </View>
             )}
           />
-          <Pressable style={[styles.closeButton, { backgroundColor: theme.primary }]} onPress={onClose}>
+
+          {/* Botão Fechar */}
+          <Pressable
+            style={[styles.closeButton, { backgroundColor: theme.primary }]}
+            onPress={() => {
+              onClose();
+              resetForm();
+            }}
+          >
             <Text style={styles.buttonText}>Fechar</Text>
           </Pressable>
         </View>
@@ -69,11 +129,11 @@ export default function AccountsModal({ visible, onClose }: AccountsModalProps) 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 },
   modal: { width: '100%', borderRadius: 12, padding: 16 },
-  title: { fontSize: 16, fontWeight: '700', marginBottom: 12 },
+  title: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
   form: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   input: { flex: 1, borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, height: 40, marginRight: 8 },
   button: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10 },
-  buttonText: { color: '#fff', fontWeight: '700' },
+  buttonText: { color: '#fff', fontWeight: '700', textAlign: 'center' },
   itemRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 8, borderBottomWidth: 1 },
   closeButton: { marginTop: 16, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
 });

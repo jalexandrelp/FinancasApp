@@ -1,9 +1,9 @@
 // app/_layout.tsx
 import React from 'react';
 import ThemeProvider from './contexts/themeContext';
-import TransactionsProvider from './contexts/transactionsContext';
+import { TransactionsProvider } from './contexts/transactionsContext';
 import SettingsProvider from './contexts/settingsContext';
-import AccountsProvider from './contexts/accountsContext';
+import { AccountsProvider } from './contexts/accountsContext';
 import FinanceProvider from './contexts/financeContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
