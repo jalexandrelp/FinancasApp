@@ -1,81 +1,52 @@
-import React, { createContext, ReactNode, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// app/contexts/themeContext.tsx
+import React, { createContext, useState, useContext, ReactNode } from 'react';
 
 type Theme = {
   background: string;
+  card: string;
   text: string;
-  cardBackground: string;
-  placeholder: string;
-  border: string;
-  statusBar: 'light-content' | 'dark-content';
+  primary: string;
 };
 
 type ThemeContextType = {
-  darkMode: boolean;
-  toggleDarkMode: () => void;
   theme: Theme;
+  toggleTheme: () => void;
 };
 
-export const ThemeContext = createContext<ThemeContextType>({
-  darkMode: false,
-  toggleDarkMode: () => {},
-  theme: {
-    background: '#f0f4f8',
-    text: '#264653',
-    cardBackground: '#fff',
-    placeholder: '#999',
-    border: '#ccc',
-    statusBar: 'dark-content',
-  },
-});
+const defaultLightTheme: Theme = {
+  background: '#f5f5f5',
+  card: '#fff',
+  text: '#000',
+  primary: '#2a9d8f',
+};
 
-type Props = { children: ReactNode };
+const defaultDarkTheme: Theme = {
+  background: '#121212',
+  card: '#1e1e1e',
+  text: '#fff',
+  primary: '#2a9d8f',
+};
 
-export const ThemeProvider = ({ children }: Props) => {
-  const [darkMode, setDarkMode] = useState(false);
+export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-  useEffect(() => {
-    const loadTheme = async () => {
-      try {
-        const themeStored = await AsyncStorage.getItem('@darkMode');
-        if (themeStored) setDarkMode(themeStored === 'true');
-      } catch (err) {
-        console.error('Erro ao carregar tema', err);
-      }
-    };
-    loadTheme();
-  }, []);
+export const ThemeProvider = ({ children }: { children: ReactNode }) => {
+  const [theme, setTheme] = useState<Theme>(defaultLightTheme);
 
-  const toggleDarkMode = () => {
-    setDarkMode(prev => {
-      AsyncStorage.setItem('@darkMode', (!prev).toString()).catch(console.error);
-      return !prev;
-    });
+  const toggleTheme = () => {
+    setTheme(prev => (prev.background === '#f5f5f5' ? defaultDarkTheme : defaultLightTheme));
   };
 
-  const theme: Theme = darkMode
-    ? {
-        background: '#264653',
-        text: '#f0f4f8',
-        cardBackground: '#333',
-        placeholder: '#ccc',
-        border: '#444',
-        statusBar: 'light-content',
-      }
-    : {
-        background: '#f0f4f8',
-        text: '#264653',
-        cardBackground: '#fff',
-        placeholder: '#999',
-        border: '#ccc',
-        statusBar: 'dark-content',
-      };
-
   return (
-    <ThemeContext.Provider value={{ darkMode, toggleDarkMode, theme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
+};
+
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) throw new Error('useTheme must be used within a ThemeProvider');
+  return context;
 };
 
 export default ThemeProvider;

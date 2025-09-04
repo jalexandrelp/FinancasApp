@@ -1,84 +1,46 @@
-// path: app/transactionsContext.tsx (versão aprimorada)
-
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, ReactNode, useEffect, useState } from 'react';
+// app/contexts/transactionsContext.tsx
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export type Transaction = {
   id: string;
-  desc: string;
-  type: 'income' | 'expense'; // padronizado
-  amount: number;             // agora é number
+  type: 'income' | 'expense';
   category: string;
   account: string;
+  amount: number;
   date: string;
-  isCreditCard: boolean;
+  desc: string;
 };
 
 type TransactionsContextType = {
   transactions: Transaction[];
-  addTransaction: (tx: Transaction) => void;
-  editTransaction: (id: string, updatedTx: Transaction) => void;
+  addTransaction: (t: Transaction) => void;
   removeTransaction: (id: string) => void;
 };
 
-export const TransactionsContext = createContext<TransactionsContextType>({
-  transactions: [],
-  addTransaction: () => {},
-  editTransaction: () => {},
-  removeTransaction: () => {},
-});
+export const TransactionsContext = createContext<TransactionsContextType | undefined>(undefined);
 
-type Props = { children: ReactNode };
-
-export const TransactionsProvider = ({ children }: Props) => {
+export const TransactionsProvider = ({ children }: { children: ReactNode }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  // Carregar do AsyncStorage
-  useEffect(() => {
-    const loadTransactions = async () => {
-      try {
-        const data = await AsyncStorage.getItem('@transactions');
-        if (data) {
-          const parsed: Transaction[] = JSON.parse(data).map((t: any) => ({
-            ...t,
-            // Conversão para os novos tipos, se vier da base antiga
-            type: t.type === 'Entrada' ? 'income' : t.type === 'Saída' ? 'expense' : t.type,
-            amount: typeof t.value === 'string' ? parseFloat(t.value.replace(',', '.')) || 0 : t.amount || 0,
-          }));
-          setTransactions(parsed);
-        }
-      } catch (err) {
-        console.error('Erro ao carregar transações', err);
-      }
-    };
-    loadTransactions();
-  }, []);
+  const addTransaction = (t: Transaction) => {
+    setTransactions(prev => [t, ...prev]);
+  };
 
-  // Salvar sempre que mudar
-  useEffect(() => {
-    const saveTransactions = async () => {
-      try {
-        await AsyncStorage.setItem('@transactions', JSON.stringify(transactions));
-      } catch (err) {
-        console.error('Erro ao salvar transações', err);
-      }
-    };
-    saveTransactions();
-  }, [transactions]);
-
-  const addTransaction = (tx: Transaction) => setTransactions(prev => [tx, ...prev]);
-  const editTransaction = (id: string, updatedTx: Transaction) =>
-    setTransactions(prev => prev.map(t => (t.id === id ? updatedTx : t)));
-  const removeTransaction = (id: string) =>
+  const removeTransaction = (id: string) => {
     setTransactions(prev => prev.filter(t => t.id !== id));
+  };
 
   return (
-    <TransactionsContext.Provider
-      value={{ transactions, addTransaction, editTransaction, removeTransaction }}
-    >
+    <TransactionsContext.Provider value={{ transactions, addTransaction, removeTransaction }}>
       {children}
     </TransactionsContext.Provider>
   );
+};
+
+export const useTransactions = () => {
+  const context = useContext(TransactionsContext);
+  if (!context) throw new Error('useTransactions must be used within a TransactionsProvider');
+  return context;
 };
 
 export default TransactionsProvider;

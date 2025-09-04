@@ -1,48 +1,61 @@
 // app/(tabs)/_layout.tsx
+import React, { useContext } from 'react';
 import { Tabs } from 'expo-router';
-import React from 'react';
-import { Text } from 'react-native';
+import { Platform } from 'react-native';
+import { ThemeContext } from '../contexts/themeContext';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TabsLayout() {
+  const themeContext = useContext(ThemeContext);
+
+  if (!themeContext) return null;
+
+  const { theme } = themeContext;
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#2a9d8f',
-        tabBarInactiveTintColor: '#666',
-        tabBarStyle: { backgroundColor: '#fff' },
+        tabBarShowLabel: false, // só ícones
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: '#555',
+        tabBarStyle: {
+          backgroundColor: Platform.OS === 'android' ? theme.card : undefined,
+          borderTopColor: '#ddd',
+          height: 60,
+        },
       }}
     >
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: 'Início',
-          tabBarLabel: 'Início',
-          tabBarIcon: () => <Text>🏠</Text>,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="transactions"
         options={{
-          title: 'Transações',
-          tabBarLabel: 'Transações',
-          tabBarIcon: () => <Text>📋</Text>,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="card-outline" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="reports"
         options={{
-          title: 'Relatórios',
-          tabBarLabel: 'Relatórios',
-          tabBarIcon: () => <Text>📊</Text>,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="bar-chart-outline" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Configurações',
-          tabBarLabel: 'Configurações',
-          tabBarIcon: () => <Text>⚙️</Text>,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>

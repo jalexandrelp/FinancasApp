@@ -12,8 +12,8 @@ import {
     View,
 } from 'react-native';
 import { Account, Card, Category } from '../settingsContext';
-import { ThemeContext } from '../themeContext';
-import { Transaction } from '../transactionsContext';
+import { ThemeContext } from '../app/contexts/themeContext';
+import { TransactionsContext } from '../app/contexts/transactionsContext';
 
 type Props = {
   visible: boolean;
