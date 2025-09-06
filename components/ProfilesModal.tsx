@@ -1,8 +1,8 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { Modal, View, Text, FlatList, TextInput, Pressable, StyleSheet, SafeAreaView } from 'react-native';
-import { ThemeContext } from '../app/contexts/themeContext';
-import { AccountsContext, type Profile } from '../app/contexts/accountsContext';
 import { Ionicons } from '@expo/vector-icons';
+import React, { useContext, useEffect, useState } from 'react';
+import { FlatList, Modal, Pressable, SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { AccountsContext, type Profile } from '../src/contexts/accountsContext';
+import { ThemeContext } from '../src/contexts/themeContext';
 
 interface ProfilesModalProps { visible: boolean; onClose: () => void; }
 

@@ -1,4 +1,3 @@
-// app/(tabs)/transactions.tsx
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -15,10 +14,10 @@ import {
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import TransactionModal from '../../components/TransactionModal';
-import { AccountsContext } from '../contexts/accountsContext';
-import { FinanceContext } from '../contexts/financeContext';
-import { ThemeContext } from '../contexts/themeContext';
-import { TransactionsContext, type Transaction as TxType } from '../contexts/transactionsContext';
+import { AccountsContext } from '../../src/contexts/accountsContext';
+import { FinanceContext } from '../../src/contexts/financeContext';
+import { ThemeContext, type ThemeContextType } from '../../src/contexts/themeContext';
+import { TransactionsContext, type Transaction as TxType } from '../../src/contexts/transactionsContext';
 
 export const options = {
   title: 'Transações',
@@ -28,17 +27,6 @@ export const options = {
 };
 
 // ===== Tipagem dos contextos =====
-type ThemeContextType = {
-  theme: {
-    background: string;
-    card: string;
-    text: string;
-    primary: string;
-    income: string;
-    expense: string;
-  };
-};
-
 type AccountsContextType = { accounts: { id: string; name: string }[] };
 type FinanceContextType = { categories: { id: string; name: string }[]; cards: { id: string; name: string }[] };
 type TransactionsContextType = {
@@ -48,7 +36,7 @@ type TransactionsContextType = {
   removeTransaction: (id: string) => void;
 };
 
-// ===== Componente de filtros modular com destaque =====
+// ===== Filtros =====
 function FiltersPanel({
   typeFilter, setTypeFilter,
   accountFilter, setAccountFilter,
@@ -56,10 +44,14 @@ function FiltersPanel({
   periodFilter, setPeriodFilter,
   accounts, categories
 }: {
-  typeFilter: string; setTypeFilter: (v: string) => void;
-  accountFilter: string; setAccountFilter: (v: string) => void;
-  categoryFilter: string; setCategoryFilter: (v: string) => void;
-  periodFilter: string; setPeriodFilter: (v: string) => void;
+  typeFilter: 'all' | 'income' | 'expense';
+  setTypeFilter: (v: 'all' | 'income' | 'expense') => void;
+  accountFilter: string;
+  setAccountFilter: (v: string) => void;
+  categoryFilter: string;
+  setCategoryFilter: (v: string) => void;
+  periodFilter: '7' | '30' | 'all';
+  setPeriodFilter: (v: '7' | '30' | 'all') => void;
   accounts: { id: string; name: string }[];
   categories: { id: string; name: string }[];
 }) {
@@ -94,7 +86,7 @@ function FiltersPanel({
             {f.options.map(opt => (
               <Pressable
                 key={opt.key}
-                onPress={() => f.onSelect(opt.key)}
+                onPress={() => f.onSelect(opt.key as any)}
                 style={[styles.compactFilterBtn, getFilterStyle(f.selected === opt.key)]}
               >
                 <Text style={{ color: theme.text, fontWeight: f.selected === opt.key ? '700' : '400' }}>{opt.label}</Text>
@@ -109,12 +101,7 @@ function FiltersPanel({
 
 // ===== Linha de transação =====
 function TransactionRow({
-  item,
-  index,
-  pressedTxId,
-  setPressedTxId,
-  openEdit,
-  handleDelete,
+  item, index, pressedTxId, setPressedTxId, openEdit, handleDelete
 }: {
   item: TxType;
   index: number;
@@ -177,12 +164,10 @@ function TransactionRow({
 
 // ===== Página principal =====
 export default function TransactionsPage() {
-  const themeCtx = useContext(ThemeContext) as ThemeContextType | null;
-  const accountsCtx = useContext(AccountsContext) as AccountsContextType | null;
-  const financeCtx = useContext(FinanceContext) as FinanceContextType | null;
-  const txCtx = useContext(TransactionsContext) as TransactionsContextType | null;
-
-  if (!themeCtx || !accountsCtx || !financeCtx || !txCtx) return <SafeAreaView style={styles.centered}><Text>Inicializando...</Text></SafeAreaView>;
+  const themeCtx = useContext(ThemeContext) as ThemeContextType;
+  const accountsCtx = useContext(AccountsContext) as AccountsContextType;
+  const financeCtx = useContext(FinanceContext) as FinanceContextType;
+  const txCtx = useContext(TransactionsContext) as TransactionsContextType;
 
   const { theme } = themeCtx;
   const accounts = accountsCtx.accounts;
@@ -208,7 +193,7 @@ export default function TransactionsPage() {
   const openNew = () => { setEditingTx(null); setModalVisible(true); };
   const openEdit = (t: TxType) => { setEditingTx(t); setModalVisible(true); };
   const handleDelete = (t: TxType) => Alert.alert('Excluir lançamento', `Deseja realmente excluir "${t.desc}"?`, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Excluir', style: 'destructive', onPress: () => txCtx.removeTransaction(t.id) }]);
-  const handleSave = useCallback((t: TxType) => { editingTx ? txCtx.updateTransaction ? txCtx.updateTransaction(t) : (txCtx.removeTransaction(editingTx.id), txCtx.addTransaction(t)) : txCtx.addTransaction(t); }, [txCtx, editingTx]);
+  const handleSave = useCallback((t: TxType) => { editingTx ? txCtx.updateTransaction(t) : txCtx.addTransaction(t); }, [txCtx, editingTx]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -245,7 +230,6 @@ export default function TransactionsPage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: Platform.OS === 'android' ? 12 : 24 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12, marginBottom: 8 },
   title: { fontSize: 20, fontWeight: '700' },
   filtersRow: { padding: 12, borderRadius: 10, marginHorizontal: 12, marginBottom: 10 },

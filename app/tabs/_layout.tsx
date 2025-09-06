@@ -1,12 +1,14 @@
 // app/(tabs)/_layout.tsx
-import React, { useContext } from 'react';
-import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
-import { ThemeContext } from '../contexts/themeContext';
 import { Ionicons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
+import React, { useContext } from 'react';
+import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ThemeContext } from '../../src/contexts/themeContext';
 
 export default function TabsLayout() {
   const themeContext = useContext(ThemeContext);
+  const insets = useSafeAreaInsets(); // pega o padding seguro da tela
 
   if (!themeContext) return null;
 
@@ -22,7 +24,8 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: Platform.OS === 'android' ? theme.card : undefined,
           borderTopColor: '#ddd',
-          height: 60,
+          height: 60 + insets.bottom,   // aumenta a altura do TabBar
+          paddingBottom: insets.bottom + 5, // dá um espacinho extra
         },
       }}
     >

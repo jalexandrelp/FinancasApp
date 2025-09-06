@@ -31,6 +31,7 @@ export default function FinanceProvider({ children }: { children: ReactNode }) {
   const [cards, setCards] = useState<Card[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
+  // Carregar dados do AsyncStorage
   useEffect(() => {
     (async () => {
       try {
@@ -48,6 +49,7 @@ export default function FinanceProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
+  // Salvar dados no AsyncStorage
   useEffect(() => {
     (async () => {
       try {
@@ -61,16 +63,20 @@ export default function FinanceProvider({ children }: { children: ReactNode }) {
 
   const addIncome = (value: number) => setIncome(prev => prev + value);
   const addExpense = (value: number) => setExpenses(prev => prev + value);
-  const resetFinance = () => { setIncome(0); setExpenses(0); };
+  const resetFinance = () => {
+    setIncome(0);
+    setExpenses(0);
+  };
 
-  // cards
+  // Cards
   const addCard = (card: Card) => setCards(prev => [...prev, card]);
   const updateCard = (card: Card) => setCards(prev => prev.map(c => (c.id === card.id ? card : c)));
   const deleteCard = (id: string) => setCards(prev => prev.filter(c => c.id !== id));
 
-  // categories
+  // Categories
   const addCategory = (cat: Category) => setCategories(prev => [...prev, cat]);
-  const updateCategory = (cat: Category) => setCategories(prev => prev.map(c => (c.id === cat.id ? cat : c)));
+  const updateCategory = (cat: Category) =>
+    setCategories(prev => prev.map(c => (c.id === cat.id ? cat : c)));
   const deleteCategory = (id: string) => setCategories(prev => prev.filter(c => c.id !== id));
 
   return (

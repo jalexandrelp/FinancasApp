@@ -1,21 +1,21 @@
 // components/AccountsModal.tsx
+import { Ionicons } from '@expo/vector-icons';
 import React, { useContext, useEffect, useState } from 'react';
 import {
-  Modal,
-  View,
-  Text,
   FlatList,
-  TextInput,
+  Modal,
   Pressable,
-  StyleSheet,
   SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
-import { ThemeContext } from '../app/contexts/themeContext';
 import {
   AccountsContext,
   type Account,
-} from '../app/contexts/accountsContext';
-import { Ionicons } from '@expo/vector-icons';
+} from '../src/contexts/accountsContext';
+import { ThemeContext } from '../src/contexts/themeContext';
 
 interface AccountsModalProps {
   visible: boolean;

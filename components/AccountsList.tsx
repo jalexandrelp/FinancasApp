@@ -1,8 +1,8 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
-import { AccountsContext } from '../app/contexts/accountsContext';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AccountsContext } from '../src/contexts/accountsContext';
+import { ThemeContext } from '../src/contexts/themeContext';
 import AccountModal from './AccountsModal';
-import { ThemeContext } from '../app/contexts/themeContext';
 
 interface Account {
   id?: string;
@@ -10,7 +10,9 @@ interface Account {
 }
 
 export default function AccountsList() {
-  const { accounts } = useContext(AccountsContext);
+  const ctx = useContext(AccountsContext);
+  if (!ctx) return null; // ou exiba Placeholder
+  const { accounts } = ctx;
   const { theme } = useContext(ThemeContext) as any;
 
   const [modalVisible, setModalVisible] = useState(false);

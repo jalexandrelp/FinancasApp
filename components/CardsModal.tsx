@@ -1,8 +1,8 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { Modal, View, Text, FlatList, TextInput, Pressable, StyleSheet, SafeAreaView } from 'react-native';
-import { ThemeContext } from '../app/contexts/themeContext';
-import { FinanceContext, type Card } from '../app/contexts/financeContext';
 import { Ionicons } from '@expo/vector-icons';
+import React, { useContext, useEffect, useState } from 'react';
+import { FlatList, Modal, Pressable, SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FinanceContext, type Card } from '../src/contexts/financeContext';
+import { ThemeContext } from '../src/contexts/themeContext';
 
 interface CardsModalProps { visible: boolean; onClose: () => void; }
 

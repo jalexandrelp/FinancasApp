@@ -12,10 +12,10 @@ import {
   View,
 } from 'react-native';
 
-import { AccountsContext } from '../contexts/accountsContext';
-import { FinanceContext } from '../contexts/financeContext';
-import { ThemeContext } from '../contexts/themeContext';
-import { TransactionsContext, type Transaction } from '../contexts/transactionsContext';
+import { AccountsContext } from '../../src/contexts/accountsContext';
+import { FinanceContext } from '../../src/contexts/financeContext';
+import { ThemeContext } from '../../src/contexts/themeContext';
+import { TransactionsContext, type Transaction } from '../../src/contexts/transactionsContext';
 
 // Modais
 import AccountsModal from '../../components/AccountsModal';
@@ -45,7 +45,12 @@ export default function Dashboard() {
     );
   }
 
-  const { theme } = themeCtx;
+  // pega theme e toggle (compatível com contextos que expõem `mode` ou não)
+  const { theme, toggleTheme, mode } = themeCtx;
+  const isDark = typeof mode === 'string'
+    ? mode === 'dark'
+    : ((theme?.background || '').toLowerCase().includes('#121212') || (theme?.background || '').toLowerCase().includes('dark'));
+
   const { accounts } = accountsCtx;
   const { cards, categories } = financeCtx;
   const { transactions, addTransaction } = txCtx as {
@@ -90,8 +95,27 @@ export default function Dashboard() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Resumo */}
+      {/* Top controls: Tema (toggle) */}
+      <View style={styles.topControls}>
+        <View />
+        <Pressable
+          onPress={() => {
+            try {
+              toggleTheme && toggleTheme();
+            } catch (e) {
+              // se toggle não existir, ignora
+              console.warn('toggleTheme not available', e);
+            }
+          }}
+          style={[styles.themeBtn, { backgroundColor: theme.card }]}
+        >
+          <Text style={{ color: theme.text, fontWeight: '600' }}>
+            Tema: {isDark ? 'Dark' : 'Light'}
+          </Text>
+        </Pressable>
+      </View>
 
+      {/* Resumo */}
       <View style={styles.summaryRow}>
         <View style={[styles.summaryCard, { backgroundColor: theme.card }]}>
           <Text style={[styles.summaryLabel, { color: theme.text }]}>Entradas</Text>
@@ -117,7 +141,6 @@ export default function Dashboard() {
           contentContainerStyle={{ paddingHorizontal: 12 }}
           renderItem={({ item }) => (
             <View style={[styles.accountCard, { backgroundColor: theme.card }]}>
-              {/* Ícone removido */}
               <Text style={[styles.accountName, { color: theme.text }]}>{item.name}</Text>
               <Text style={[styles.accountBalance, { color: theme.text }]}>
                 R$ {Number(item.balance).toFixed(2)}
@@ -175,6 +198,19 @@ const styles = StyleSheet.create({
       ? StatusBar.currentHeight ?? 24
       : 24,
   },
+  topControls: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingBottom: 6,
+    alignItems: 'center',
+  },
+  themeBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    elevation: 1,
+  },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 8, paddingVertical: 10, marginTop: 16 },
   summaryCard: {
@@ -195,17 +231,20 @@ const styles = StyleSheet.create({
   summaryValue: { fontSize: 15, fontWeight: '700', marginTop: 2 },
   accountsRow: { paddingVertical: 12 },
   accountCard: {
-    width: 110, // reduzido para ficar mais compacto
-    padding: 8, // reduzido
+    width: 110,
+    padding: 8,
     borderRadius: 10,
-    marginRight: 8, // reduzido
+    marginRight: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  accountName: { fontSize: 13, fontWeight: '600' }, // reduzido
-  accountBalance: { fontSize: 14, fontWeight: '700', marginTop: 4 }, // reduzido
+  accountName: { fontSize: 13, fontWeight: '600' },
+  accountBalance: { fontSize: 14, fontWeight: '700', marginTop: 4 },
   transactionsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12, marginTop: 8 },
   sectionTitle: { fontSize: 16, fontWeight: '700' },
   txRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 8, marginVertical: 6 },
   emptyText: { padding: 12, textAlign: 'center' },
 });
+// O Dashboard exibe um resumo financeiro, saldo por conta e as últimas transações
+// Permite adicionar novas transações via modal
+// Usa múltiplos contextos para obter dados de tema, contas, finanças e transações

@@ -11,10 +11,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AccountsContext, type Account } from '../app/contexts/accountsContext';
-import { FinanceContext, type Card, type Category } from '../app/contexts/financeContext';
-import { ThemeContext } from '../app/contexts/themeContext';
-import { TransactionsContext, type Transaction as TxType } from '../app/contexts/transactionsContext';
+import { AccountsContext, type Account } from '../src/contexts/accountsContext';
+import { FinanceContext, type Card, type Category } from '../src/contexts/financeContext';
+import { ThemeContext } from '../src/contexts/themeContext';
+import { TransactionsContext, type Transaction as TxType } from '../src/contexts/transactionsContext';
 
 type Props = {
   visible: boolean;
