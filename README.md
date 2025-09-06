@@ -1,4 +1,3 @@
-
 # 🟢 FinancasApp v1.3-base — Release Notes
 
 ## 📌 Visão Geral
@@ -70,8 +69,9 @@ Esta release consolida as principais funcionalidades do FinancasApp, incluindo:
 
 ---
 
-📂 Estrutura do Projeto — FinancasApp v1.3-base
+## 🗂 Estrutura do Projeto (Resumo)
 
+```
 .env
 .env.example
 .vscode
@@ -162,6 +162,7 @@ package.json
 README.md
 tsconfig.json
 
+```
 
 ---
 
@@ -178,4 +179,6 @@ tsconfig.json
 
 Esta versão estabelece a **base sólida** do FinancasApp, pronta para futuras evoluções, integração com APIs externas e melhorias visuais.
 O foco foi na **estabilidade, modularidade e usabilidade**, garantindo que todas as funcionalidades principais estejam operacionais.
+
+OBS: erros ao abrir no android devem ser corrigidos.
 
