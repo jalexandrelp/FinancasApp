@@ -1,12 +1,12 @@
-// app/tabs/reports.tsx
+// app/tabs/settings.tsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-export default function ReportsScreen() {
+export default function SettingsScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Relatórios</Text>
-      <Text style={styles.p}>Placeholder — depois voltamos com gráficos.</Text>
+      <Text style={styles.title}>Configurações</Text>
+      <Text style={styles.p}>Placeholder — sem modais por enquanto.</Text>
     </View>
   );
 }

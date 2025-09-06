@@ -1,35 +1,16 @@
+// app/+not-found.tsx
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import { Link, Stack } from 'expo-router';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { View, Text, StyleSheet } from 'react-native';
 
-export default function NotFoundScreen() {
+export default function NotFound() {
   return (
-    <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: 'Oops!' }} />
-      <ThemedText type="title">This screen does not exist.</ThemedText>
-      <Link href="/">
-        <ThemedText type="link" style={styles.link}>
-          Go to home screen!
-        </ThemedText>
-      </Link>
-    </ThemedView>
+    <View style={styles.container}>
+      <Text style={styles.title}>Tela não encontrada</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
-  },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 18, fontWeight: '600' },
 });
-// Tela exibida quando o usuário navega para uma rota inexistente
-// Fornece um link para retornar à tela inicial
-// Usa componentes temáticos para se adaptar ao tema claro/escuro da aplicação
