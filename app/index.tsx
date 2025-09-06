@@ -1,7 +1,8 @@
+// app/index.tsx
 import React, { useEffect } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/contexts/authContext';
-import { View, ActivityIndicator, StyleSheet, Platform, StatusBar } from 'react-native';
 
 export default function Index() {
   const router = useRouter();
@@ -9,27 +10,17 @@ export default function Index() {
 
   useEffect(() => {
     if (!loading) {
-      if (user) {
-        router.replace('/tabs/dashboard');
-      } else {
-        router.replace('/auth/login');
-      }
+      router.replace(user ? '/tabs/dashboard' : '/auth/login');
     }
-  }, [user, loading, router]);
+  }, [loading, user, router]);
 
-  // Exibe um loading simples enquanto checa o usuário
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color={Platform.OS === 'android' ? '#000' : '#0a7ea4'} />
-      {Platform.OS === 'android' && <StatusBar barStyle="dark-content" />}
+      <ActivityIndicator size="large" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });

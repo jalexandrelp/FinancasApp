@@ -1,16 +1,18 @@
 // src/contexts/authContext.tsx
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
-import { 
-  onAuthStateChanged, 
-  User, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signInWithCredential, 
-  GoogleAuthProvider 
+import {
+  onAuthStateChanged,
+  User,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithCredential,
+  GoogleAuthProvider,
 } from 'firebase/auth';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
+import { makeRedirectUri } from 'expo-auth-session';
+import Constants from 'expo-constants';
 import { auth, db } from '../firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -30,33 +32,58 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Google Auth
+  // Lê IDs do Google do app.config.ts (extra)
+  const extra: any = Constants.expoConfig?.extra || {};
+
+  // Redirect com scheme do app + proxy do Expo (funciona Web/Android)
+  const redirectUri = makeRedirectUri({ scheme: 'financasapp', useProxy: true });
+
+  // Google Auth (usa clientId web + androidClientId do extra)
   const [request, response, promptAsync] = Google.useAuthRequest({
-    iosClientId: '<IOS_CLIENT_ID>',
-    androidClientId: '<ANDROID_CLIENT_ID>',
-    webClientId: '<WEB_CLIENT_ID>',
+    clientId: extra.GOOGLE_WEB_CLIENT_ID,
+    androidClientId: extra.GOOGLE_ANDROID_CLIENT_ID,
+    // iosClientId pode ser adicionado no futuro se publicar em iOS
+    redirectUri,
+    scopes: ['profile', 'email'],
   });
 
+  // Trata retorno do Google → Firebase
   useEffect(() => {
-    if (response?.type === 'success') {
-      const { id_token } = response.params;
-      const credential = GoogleAuthProvider.credential(id_token);
-      signInWithCredential(auth, credential)
-        .then(async (res) => {
+    (async () => {
+      if (response?.type === 'success') {
+        // id_token retorna via params quando useProxy=true
+        const idToken =
+          (response.params as any)?.id_token ||
+          (response as any)?.authentication?.idToken;
+
+        if (!idToken) {
+          Alert.alert('Erro Google', 'ID token não retornado pela autenticação.');
+          return;
+        }
+
+        try {
+          const credential = GoogleAuthProvider.credential(idToken);
+          const res = await signInWithCredential(auth, credential);
+
+          // Cria doc do usuário se não existir
           const uid = res.user.uid;
           const userRef = doc(db, 'users', uid);
-          const docSnap = await getDoc(userRef);
-          if (!docSnap.exists()) {
+          const snap = await getDoc(userRef);
+          if (!snap.exists()) {
             await setDoc(userRef, {
               email: res.user.email,
-              createdAt: new Date(),
+              name: res.user.displayName ?? '',
+              createdAt: new Date().toISOString(),
             });
           }
-        })
-        .catch((e) => Alert.alert('Erro Google', e.message));
-    }
+        } catch (e: any) {
+          Alert.alert('Erro Google', e?.message ?? 'Falha ao autenticar com Google.');
+        }
+      }
+    })();
   }, [response]);
 
+  // Observa sessão Firebase
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
@@ -75,13 +102,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const userRef = doc(db, 'users', uid);
     await setDoc(userRef, {
       email: res.user.email,
-      createdAt: new Date(),
+      name: res.user.displayName ?? '',
+      createdAt: new Date().toISOString(),
     });
   };
 
   const signInWithGoogle = async () => {
-    if (!request) return;
-    await promptAsync();
+    if (!request) {
+      Alert.alert('Google Auth', 'Solicitação de login não inicializada.');
+      return;
+    }
+    await promptAsync({ useProxy: true, showInRecents: true });
   };
 
   return (
