@@ -1,6 +1,10 @@
-// src/contexts/authContext.tsx
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { Alert, Platform } from 'react-native';
+import { Alert } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import * as AuthSession from 'expo-auth-session';
+import Constants from 'expo-constants';
+
 import {
   onAuthStateChanged,
   User,
@@ -9,12 +13,8 @@ import {
   signInWithCredential,
   GoogleAuthProvider,
 } from 'firebase/auth';
-import * as Google from 'expo-auth-session/providers/google';
-import * as WebBrowser from 'expo-web-browser';
-import { makeRedirectUri } from 'expo-auth-session';
-import Constants from 'expo-constants';
-import { auth, db } from '../firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirebase } from '../firebase/config';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -29,95 +29,79 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { auth, db } = getFirebase();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const extra: any = Constants.expoConfig?.extra || {};
+  const extra =
+    (Constants.expoConfig?.extra as any) ||
+    // @ts-ignore
+    (Constants.manifest?.extra as any) ||
+    {};
 
-  // Web: useProxy=false -> redirect http://localhost:8081
-  // Android/iOS (Expo Go): useProxy=true -> redirect https://auth.expo.dev/...
-  const usingProxy = Platform.OS !== 'web';
-  const redirectUri = makeRedirectUri({ scheme: 'financasapp', useProxy: usingProxy });
+  const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
 
   const [request, response, promptAsync] = Google.useAuthRequest({
-    // deixe explícito para o Web:
-    clientId: extra.GOOGLE_WEB_CLIENT_ID,
-    webClientId: extra.GOOGLE_WEB_CLIENT_ID,
-    // Android:
     androidClientId: extra.GOOGLE_ANDROID_CLIENT_ID,
-
-    redirectUri,
-    scopes: ['profile', 'email'],
-
-    // 👇 garante que o Google devolva um id_token (necessário no Firebase)
+    webClientId: extra.GOOGLE_WEB_CLIENT_ID, // ← usa o NOVO ID
     responseType: 'id_token',
-    // qualidade de vida:
-    extraParams: { prompt: 'select_account' },
+    usePKCE: true,
+    redirectUri,
+    scopes: ['openid', 'email', 'profile'],
   });
 
+  // DEBUG – garante que estamos usando o ID certo e o redirect certo
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser ?? null);
-      setLoading(false);
+    console.log('[GoogleAuth] ids', {
+      android: extra.GOOGLE_ANDROID_CLIENT_ID,
+      web: extra.GOOGLE_WEB_CLIENT_ID,
+      redirectUri,
     });
-    return unsub;
   }, []);
 
   useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      setLoading(false);
+    }, (e) => {
+      console.error('[AuthProvider] onAuthStateChanged init error:', e);
+    });
+    return unsub;
+  }, [auth]);
+
+  useEffect(() => {
     (async () => {
-      if (response?.type !== 'success') return;
+      if (response?.type === 'success') {
+        try {
+          const idToken = (response.params as any).id_token;
+          const credential = GoogleAuthProvider.credential(idToken);
+          const res = await signInWithCredential(auth, credential);
 
-      // No Web, com responseType 'id_token', o token vem em params.id_token
-      const idToken =
-        (response.params as any)?.id_token ||
-        (response as any)?.authentication?.idToken;
-
-      if (!idToken) {
-        Alert.alert('Erro Google', 'ID token não retornado pela autenticação.');
-        return;
-      }
-
-      try {
-        const cred = GoogleAuthProvider.credential(idToken);
-        const res = await signInWithCredential(auth, cred);
-
-        // cria doc do usuário se não existir
-        const uid = res.user.uid;
-        const ref = doc(db, 'users', uid);
-        const snap = await getDoc(ref);
-        if (!snap.exists()) {
-          await setDoc(ref, {
-            email: res.user.email,
-            name: res.user.displayName ?? '',
-            createdAt: new Date().toISOString(),
-          });
+          const uid = res.user.uid;
+          const userRef = doc(db, 'users', uid);
+          const snap = await getDoc(userRef);
+          if (!snap.exists()) {
+            await setDoc(userRef, { email: res.user.email, createdAt: new Date() });
+          }
+        } catch (e: any) {
+          console.error('[AuthProvider] Google signIn error:', e);
+          Alert.alert('Erro Google', e.message ?? String(e));
         }
-      } catch (e: any) {
-        Alert.alert('Erro Google', e?.message ?? 'Falha ao autenticar com Google');
       }
     })();
-  }, [response, db]);
+  }, [response, auth, db]);
 
-  const signInEmail = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
-  };
+  const signInEmail = async (email: string, password: string) =>
+    signInWithEmailAndPassword(auth, email, password);
 
   const signUpEmail = async (email: string, password: string) => {
     const res = await createUserWithEmailAndPassword(auth, email, password);
-    const uid = res.user.uid;
-    await setDoc(doc(db, 'users', uid), {
-      email: res.user.email,
-      name: res.user.displayName ?? '',
-      createdAt: new Date().toISOString(),
-    });
+    await setDoc(doc(db, 'users', res.user.uid), { email: res.user.email, createdAt: new Date() });
   };
 
   const signInWithGoogle = async () => {
-    if (!request) {
-      Alert.alert('Google Auth', 'Solicitação de login não inicializada.');
-      return;
-    }
-    await promptAsync({ useProxy: usingProxy, showInRecents: true });
+    if (!request) return;
+    await promptAsync({ useProxy: true });
   };
 
   return (

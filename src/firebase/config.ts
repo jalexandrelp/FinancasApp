@@ -1,24 +1,50 @@
-// src/firebase/config.ts
+import 'firebase/auth';
+
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getFirestore } from 'firebase/firestore';
+import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
-// Pega variáveis do Expo Constants ou do process.env
-const extras = (Constants.expoConfig?.extra) || (Constants.manifest as any)?.extra || {};
+function getExtra() {
+  const extras =
+    (Constants.expoConfig?.extra as Record<string, string> | undefined) ||
+    // @ts-ignore (compat)
+    (Constants.manifest?.extra as Record<string, string> | undefined) ||
+    {};
+  return extras;
+}
 
-const firebaseConfig = {
-  apiKey: extras.FIREBASE_API_KEY || process.env.FIREBASE_API_KEY || '<COLE_AQUI>',
-  authDomain: extras.FIREBASE_AUTH_DOMAIN || process.env.FIREBASE_AUTH_DOMAIN || '<COLE_AQUI>',
-  projectId: extras.FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || '<COLE_AQUI>',
-  storageBucket: extras.FIREBASE_STORAGE_BUCKET || process.env.FIREBASE_STORAGE_BUCKET || '<COLE_AQUI>',
-  messagingSenderId: extras.FIREBASE_MESSAGING_SENDER_ID || process.env.FIREBASE_MESSAGING_SENDER_ID || '<COLE_AQUI>',
-  appId: extras.FIREBASE_APP_ID || process.env.FIREBASE_APP_ID || '<COLE_AQUI>',
-};
+let app: any, auth: any, db: any;
 
-// Inicializa Firebase apenas se ainda não houver apps
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+export function getFirebase() {
+  if (app && auth && db) return { app, auth, db };
 
-// Exporta auth e db
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+  const extra = getExtra();
+  const firebaseConfig = {
+    apiKey: extra.FIREBASE_API_KEY,
+    authDomain: extra.FIREBASE_AUTH_DOMAIN,
+    projectId: extra.FIREBASE_PROJECT_ID,
+    storageBucket: extra.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: extra.FIREBASE_MESSAGING_SENDER_ID,
+    appId: extra.FIREBASE_APP_ID,
+  };
+
+  app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+
+  if (Platform.OS === 'android' || Platform.OS === 'ios') {
+    try {
+      auth = initializeAuth(app, {
+        persistence: getReactNativePersistence(AsyncStorage),
+      });
+    } catch {
+      auth = getAuth(app);
+    }
+  } else {
+    auth = getAuth(app);
+  }
+
+  db = getFirestore(app);
+  return { app, auth, db };
+}
