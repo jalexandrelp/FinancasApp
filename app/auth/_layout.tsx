@@ -1,16 +1,13 @@
 // app/auth/_layout.tsx
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Slot } from 'expo-router';
+import { Stack } from 'expo-router';
 
 export default function AuthLayout() {
   return (
     <View style={styles.container}>
-      <Slot />
+      <Stack screenOptions={{ headerShown: false }} />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-});
+const styles = StyleSheet.create({ container: { flex: 1 } });
