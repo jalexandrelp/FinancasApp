@@ -1,6 +1,6 @@
 // src/contexts/authContext.tsx
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import {
   onAuthStateChanged,
   User,
@@ -32,65 +32,71 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Lê IDs do Google do app.config.ts (extra)
   const extra: any = Constants.expoConfig?.extra || {};
 
-  // Redirect com scheme do app + proxy do Expo (funciona Web/Android)
-  const redirectUri = makeRedirectUri({ scheme: 'financasapp', useProxy: true });
+  // Web: useProxy=false -> redirect http://localhost:8081
+  // Android/iOS (Expo Go): useProxy=true -> redirect https://auth.expo.dev/...
+  const usingProxy = Platform.OS !== 'web';
+  const redirectUri = makeRedirectUri({ scheme: 'financasapp', useProxy: usingProxy });
 
-  // Google Auth (usa clientId web + androidClientId do extra)
   const [request, response, promptAsync] = Google.useAuthRequest({
+    // deixe explícito para o Web:
     clientId: extra.GOOGLE_WEB_CLIENT_ID,
+    webClientId: extra.GOOGLE_WEB_CLIENT_ID,
+    // Android:
     androidClientId: extra.GOOGLE_ANDROID_CLIENT_ID,
-    // iosClientId pode ser adicionado no futuro se publicar em iOS
+
     redirectUri,
     scopes: ['profile', 'email'],
+
+    // 👇 garante que o Google devolva um id_token (necessário no Firebase)
+    responseType: 'id_token',
+    // qualidade de vida:
+    extraParams: { prompt: 'select_account' },
   });
 
-  // Trata retorno do Google → Firebase
   useEffect(() => {
-    (async () => {
-      if (response?.type === 'success') {
-        // id_token retorna via params quando useProxy=true
-        const idToken =
-          (response.params as any)?.id_token ||
-          (response as any)?.authentication?.idToken;
-
-        if (!idToken) {
-          Alert.alert('Erro Google', 'ID token não retornado pela autenticação.');
-          return;
-        }
-
-        try {
-          const credential = GoogleAuthProvider.credential(idToken);
-          const res = await signInWithCredential(auth, credential);
-
-          // Cria doc do usuário se não existir
-          const uid = res.user.uid;
-          const userRef = doc(db, 'users', uid);
-          const snap = await getDoc(userRef);
-          if (!snap.exists()) {
-            await setDoc(userRef, {
-              email: res.user.email,
-              name: res.user.displayName ?? '',
-              createdAt: new Date().toISOString(),
-            });
-          }
-        } catch (e: any) {
-          Alert.alert('Erro Google', e?.message ?? 'Falha ao autenticar com Google.');
-        }
-      }
-    })();
-  }, [response]);
-
-  // Observa sessão Firebase
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser ?? null);
       setLoading(false);
     });
-    return unsubscribe;
+    return unsub;
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      if (response?.type !== 'success') return;
+
+      // No Web, com responseType 'id_token', o token vem em params.id_token
+      const idToken =
+        (response.params as any)?.id_token ||
+        (response as any)?.authentication?.idToken;
+
+      if (!idToken) {
+        Alert.alert('Erro Google', 'ID token não retornado pela autenticação.');
+        return;
+      }
+
+      try {
+        const cred = GoogleAuthProvider.credential(idToken);
+        const res = await signInWithCredential(auth, cred);
+
+        // cria doc do usuário se não existir
+        const uid = res.user.uid;
+        const ref = doc(db, 'users', uid);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) {
+          await setDoc(ref, {
+            email: res.user.email,
+            name: res.user.displayName ?? '',
+            createdAt: new Date().toISOString(),
+          });
+        }
+      } catch (e: any) {
+        Alert.alert('Erro Google', e?.message ?? 'Falha ao autenticar com Google');
+      }
+    })();
+  }, [response, db]);
 
   const signInEmail = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
@@ -99,8 +105,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signUpEmail = async (email: string, password: string) => {
     const res = await createUserWithEmailAndPassword(auth, email, password);
     const uid = res.user.uid;
-    const userRef = doc(db, 'users', uid);
-    await setDoc(userRef, {
+    await setDoc(doc(db, 'users', uid), {
       email: res.user.email,
       name: res.user.displayName ?? '',
       createdAt: new Date().toISOString(),
@@ -112,7 +117,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       Alert.alert('Google Auth', 'Solicitação de login não inicializada.');
       return;
     }
-    await promptAsync({ useProxy: true, showInRecents: true });
+    await promptAsync({ useProxy: usingProxy, showInRecents: true });
   };
 
   return (
@@ -123,7 +128,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within an AuthProvider');
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  return ctx;
 };

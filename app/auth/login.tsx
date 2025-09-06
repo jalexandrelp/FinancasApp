@@ -1,51 +1,91 @@
 // app/auth/login.tsx
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Button, Platform } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, Button, TextInput, Platform, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { makeRedirectUri } from 'expo-auth-session';
 
 export default function LoginScreen() {
   const router = useRouter();
 
-  // Mostra o redirectUri REAL que o Google vê (use para corrigir o redirect_uri_mismatch no Web)
+  // Android: placeholder, sem auth
+  if (Platform.OS !== 'web') {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Login (Android placeholder)</Text>
+        <Button title="Entrar (placeholder)" onPress={() => router.replace('/tabs/dashboard')} />
+      </View>
+    );
+  }
+
+  // Web: carrega dinamicamente o Auth
+  const { useAuth } = require('../../src/contexts/authContext');
+  const { loading, signInEmail, signUpEmail, signInWithGoogle } = useAuth();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
   const redirectUri = useMemo(
-    () => makeRedirectUri({ scheme: 'financasapp', useProxy: true }),
+    () => makeRedirectUri({ scheme: 'financasapp', useProxy: false }), // web -> http://localhost:8081
     []
   );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login (placeholder)</Text>
+      <Text style={styles.title}>Entrar (Web)</Text>
 
-      <Button title="Entrar (placeholder)" onPress={() => router.replace('/tabs/dashboard')} />
+      <TextInput
+        placeholder="Email"
+        autoCapitalize="none"
+        keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Senha"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+        style={styles.input}
+      />
+
+      <Button
+        title="Entrar"
+        onPress={async () => {
+          try { await signInEmail(email, password); }
+          catch (e: any) { Alert.alert('Erro', e?.message ?? 'Falha ao entrar'); }
+        }}
+      />
+      <View style={{ height: 12 }} />
+      <Button
+        title="Criar conta"
+        onPress={async () => {
+          try { await signUpEmail(email, password); }
+          catch (e: any) { Alert.alert('Erro', e?.message ?? 'Falha ao criar conta'); }
+        }}
+      />
+      <View style={{ height: 24 }} />
+      <Button
+        title="Entrar com Google"
+        onPress={async () => {
+          try { await signInWithGoogle(); }
+          catch (e: any) { Alert.alert('Erro Google', e?.message ?? 'Falha ao autenticar com Google'); }
+        }}
+      />
+
+      {loading && <ActivityIndicator style={{ marginTop: 16 }} />}
 
       <View style={{ height: 24 }} />
       <Text style={styles.hintTitle}>Debug de OAuth</Text>
-      <Text style={styles.hint}>
-        Redirecionamento usado pelo AuthSession:
-      </Text>
-      <Text selectable style={styles.uri}>
-        {redirectUri}
-      </Text>
-      <Text style={styles.hintSmall}>
-        ➜ No Google Cloud Console (OAuth Web Client), adicione este valor em{"\n"}
-        <Text style={{ fontWeight: '700' }}>Authorized redirect URIs</Text>.
-      </Text>
-      {Platform.OS === 'web' && (
-        <Text style={styles.hintSmall}>
-          Também adicione <Text style={{ fontWeight: '700' }}>http://localhost:8081</Text> em{" "}
-          <Text style={{ fontWeight: '700' }}>Authorized JavaScript origins</Text>.
-        </Text>
-      )}
+      <Text style={styles.hint}>redirectUri: {redirectUri}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, justifyContent: 'center' },
-  title: { fontSize: 24, fontWeight: '700', marginBottom: 16, textAlign: 'center' },
-  hintTitle: { fontSize: 16, fontWeight: '600', marginBottom: 6, textAlign: 'center' },
+  title: { fontSize: 24, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 6, padding: 10, marginBottom: 10 },
+  hintTitle: { fontSize: 16, fontWeight: '600', marginTop: 10, textAlign: 'center' },
   hint: { textAlign: 'center', color: '#555' },
-  hintSmall: { textAlign: 'center', color: '#666', marginTop: 6, fontSize: 12 },
-  uri: { marginTop: 8, textAlign: 'center', color: '#0a7ea4' },
 });
